@@ -25,7 +25,7 @@ Windows 10/11 (64-bit) · UI in English and Vietnamese
 3. Wait a few seconds until the green **"Steam unblocked ✓"** appears.
 
 ### Step 3. Open Steam
-- Click **Open Steam**.
+- Click **Open Steam**. Steam not installed yet? The button opens the Steam download page instead (it loads now that Steam is unblocked).
 - If Steam was already open and still shows a network error: right-click the Steam tray icon → **Exit**, then open Steam again.
 
 ### Step 4 (optional). Background mode and start with Windows
@@ -57,6 +57,9 @@ The app follows your Windows display language (Vietnamese Windows → Vietnamese
 ---
 
 ## FAQ
+
+**"You opened the app straight from inside the zip file".**
+You double-clicked the exe inside the zip without extracting it, so the `core` folder is missing. Right-click the zip → **Extract All…**, then open `SteamUnblock.exe` from the extracted folder. If `core` is missing for another reason, the app offers to open the download page.
 
 **My antivirus flags the exe.**
 It is packaged with PyInstaller and asks for Administrator rights, which sometimes causes false positives. All source code is in this repo; you can build it yourself (below).

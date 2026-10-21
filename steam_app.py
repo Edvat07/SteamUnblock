@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+import webbrowser
 import winreg
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ from PIL import Image
 
 import autostart
 import i18n
+import setup_check
 from tunnel import SingBox, build_steam_unblock_config, host_has_ipv6, probe_steam
 from winapi import (
     SHIELD_TUNNEL_MUTEX, STEAM_APP_MUTEX, STEAM_SHOW_EVENT, STEAM_TUNNEL_MUTEX, KillOnCloseJob, NamedEvent,
@@ -42,6 +44,8 @@ BASE_DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).r
 CORE_DIR = BASE_DIR / "core"
 SETTINGS_PATH = BASE_DIR / "steam-settings.json"
 AUTOSTART_TASK = "SteamUnblock"
+RELEASES_URL = "https://github.com/Edvat07/SteamUnblock/releases/latest"
+STEAM_DOWNLOAD_URL = "https://store.steampowered.com/about/"
 STARTUP_TRAY, STARTUP_WINDOW = "tray", "window"
 
 SINGBOX_NAMES = frozenset({"sing-box.exe"})
@@ -117,6 +121,10 @@ tr = i18n.Strings({
         "en": "Opening Steam… If Steam was already open and still shows a network error, quit Steam fully "
               "and open it again.",
     },
+    "steam_not_installed": {
+        "vi": "Máy chưa cài Steam — đã mở trang tải Steam. Cài xong thì bấm Mở Steam.",
+        "en": "Steam is not installed — opened the Steam download page. After installing it, press Open Steam.",
+    },
     "resuming": {"vi": "Roblox Shield đã tắt, bật lại mở khoá Steam.",
                  "en": "Roblox Shield stopped, turning the Steam unblock back on."},
     "singbox_died": {"vi": "sing-box dừng đột ngột.", "en": "sing-box stopped unexpectedly."},
@@ -148,6 +156,14 @@ def find_steam_exe() -> Path | None:
         return path if path.is_file() else None
     except OSError:
         return None
+
+
+def steam_url_registered() -> bool:
+    try:
+        winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, r"steam\shell\open\command").Close()
+        return True
+    except OSError:
+        return False
 
 
 def load_settings() -> dict:
@@ -447,8 +463,13 @@ class App:
         if exe:
             # explorer.exe starts Steam with the normal (non-admin) user token.
             subprocess.Popen(["explorer.exe", str(exe)], close_fds=True)
-        else:
+        elif steam_url_registered():
             os.startfile("steam://open/main")
+        else:
+            # Steam is not installed yet: its download page is reachable now that Steam is unblocked.
+            webbrowser.open(STEAM_DOWNLOAD_URL)
+            self.log(tr("steam_not_installed"))
+            return
         self.log(tr("opening_steam"))
 
     # ── Event loop / watchdog ─────────────────────────────────────────────────
@@ -542,9 +563,13 @@ def main() -> None:
         signal_event(STEAM_SHOW_EVENT)
         return
     root = tk.Tk()
+    root.withdraw()   # hidden until the first-run check passes, so its dialogs have a parent
+    if not setup_check.ensure_ready(BASE_DIR, CORE_DIR, APP_TITLE, "SteamUnblock.exe", RELEASES_URL):
+        root.destroy()
+        return
     app = App(root, settings)
-    if autostart.AUTOSTART_ARG in sys.argv and app.starts_hidden():
-        root.withdraw()
+    if not (autostart.AUTOSTART_ARG in sys.argv and app.starts_hidden()):
+        root.deiconify()
     root.mainloop()
     if app.restart_requested:
         instance.release()   # or the new copy would see us and just exit

@@ -25,7 +25,7 @@ Windows 10/11 (64-bit) · Giao diện tiếng Việt và tiếng Anh
 3. Đợi vài giây đến khi hiện dòng chữ xanh **"Đã mở khoá Steam ✓"**.
 
 ### Bước 3. Vào Steam
-- Bấm **Mở Steam**.
+- Bấm **Mở Steam**. Máy chưa cài Steam? Nút này sẽ mở trang tải Steam (giờ đã vào được vì Steam đã được mở khoá).
 - Nếu Steam đã mở sẵn từ trước mà vẫn báo lỗi mạng: chuột phải icon Steam ở khay → **Exit**, rồi mở lại Steam.
 
 ### Bước 4 (tuỳ chọn). Chạy ngầm và khởi động cùng Windows
@@ -57,6 +57,9 @@ App tự theo ngôn ngữ hiển thị của Windows (Windows tiếng Việt →
 ---
 
 ## Câu hỏi thường gặp
+
+**App báo "Bạn đang mở app ngay bên trong file zip"?**
+Bạn bấm đúp file exe ngay trong file zip mà chưa giải nén, nên thiếu thư mục `core`. Chuột phải file zip → **Extract All…**, rồi mở `SteamUnblock.exe` trong thư mục vừa giải nén. Nếu thiếu `core` vì lý do khác, app sẽ đề nghị mở trang tải.
 
 **Phần mềm diệt virus báo có virus?**
 File exe được đóng gói bằng PyInstaller và xin quyền Administrator, nên đôi khi bị báo nhầm. Toàn bộ mã nguồn nằm trong repo này; bạn có thể tự build (xem bên dưới).
