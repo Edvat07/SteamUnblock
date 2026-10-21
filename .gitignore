@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+build/
+release/
+dist/
+*.spec
+# third-party binaries: download them (see README), they are shipped in the release zip
+core/
+# per-user state and runtime files
+steam-settings.json
+*.log
+*.tmp
