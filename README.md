@@ -1,6 +1,15 @@
-# 🎮 Steam Unblock
+<p align="center">
+  <img src="docs/images/banner.png" alt="Steam Unblock" width="100%">
+</p>
 
-**English** · [Tiếng Việt](README.vi.md)
+<p align="center">
+  <a href="https://github.com/Edvat07/SteamUnblock/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Edvat07/SteamUnblock?label=release&color=66c0f4"></a>
+  <a href="https://github.com/Edvat07/SteamUnblock/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Edvat07/SteamUnblock/total?color=66c0f4"></a>
+  <img alt="Windows 10/11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6">
+  <img alt="English | Tiếng Việt" src="https://img.shields.io/badge/UI-English%20%7C%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-2ea44f">
+</p>
+
+<p align="center"><b>English</b> · <a href="README.vi.md">Tiếng Việt</a></p>
 
 Get into Steam when your ISP blocks it — **without a VPN**, so your in-game ping does not change. Built for Vietnamese ISPs, which block Steam in two ways at once: hijacked DNS (switching to 8.8.8.8 does not help) and DPI that resets connections when it sees a Steam domain.
 

@@ -1,6 +1,15 @@
-# 🎮 Steam Unblock
+<p align="center">
+  <img src="docs/images/banner.png" alt="Steam Unblock" width="100%">
+</p>
 
-[English](README.md) · **Tiếng Việt**
+<p align="center">
+  <a href="https://github.com/Edvat07/SteamUnblock/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Edvat07/SteamUnblock?label=release&color=66c0f4"></a>
+  <a href="https://github.com/Edvat07/SteamUnblock/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Edvat07/SteamUnblock/total?color=66c0f4"></a>
+  <img alt="Windows 10/11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6">
+  <img alt="English | Tiếng Việt" src="https://img.shields.io/badge/UI-English%20%7C%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-2ea44f">
+</p>
+
+<p align="center"><a href="README.md">English</a> · <b>Tiếng Việt</b></p>
 
 Vào được Steam khi nhà mạng chặn, **không dùng VPN**, nên ping khi chơi game không đổi. Nhà mạng chặn Steam theo **2 lớp** cùng lúc: DNS bị giả mạo (đổi sang 8.8.8.8 cũng không ăn thua) và thiết bị lọc (DPI) ngắt kết nối khi đọc thấy tên miền Steam. App vượt cả hai.
 
