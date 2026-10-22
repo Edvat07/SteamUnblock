@@ -33,6 +33,12 @@ Windows 10/11 (64-bit) · UI in English and Vietnamese
 2. Windows asks for Administrator rights → click **Yes**. The app needs them to create a virtual network adapter.
 3. Wait a few seconds until the green **"Steam unblocked ✓"** appears.
 
+> **First time you open it.** Nothing else needs to be installed — no Python, no runtime: everything is inside the exe.
+>
+> If Windows shows **"Windows protected your PC"** (SmartScreen), click **More info** → **Run anyway**. It appears for any new app that is not code-signed (signing needs a paid certificate), not because the app is harmful; the full source is in this repo. You only see it once.
+>
+> On some new Windows 11 PCs, **Smart App Control** blocks unsigned apps without a *Run anyway* button. The only way around it is to turn Smart App Control off (Windows Security → App & browser control → Smart App Control settings) — your decision: it cannot be turned back on without reinstalling Windows.
+
 ### Step 3. Open Steam
 - Click **Open Steam**. Steam not installed yet? The button opens the Steam download page instead (it loads now that Steam is unblocked).
 - If Steam was already open and still shows a network error: right-click the Steam tray icon → **Exit**, then open Steam again.

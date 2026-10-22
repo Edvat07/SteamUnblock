@@ -33,6 +33,12 @@ Windows 10/11 (64-bit) · Giao diện tiếng Việt và tiếng Anh
 2. Windows hỏi quyền Administrator → bấm **Yes**. App cần quyền này để tạo card mạng ảo.
 3. Đợi vài giây đến khi hiện dòng chữ xanh **"Đã mở khoá Steam ✓"**.
 
+> **Lần đầu mở app.** Không cần cài thêm gì — không cần Python hay thư viện nào: mọi thứ đã nằm sẵn trong file exe.
+>
+> Nếu Windows hiện **"Windows protected your PC"** (SmartScreen), bấm **More info** (Thông tin thêm) → **Run anyway** (Vẫn chạy). Cảnh báo này hiện với mọi app mới chưa có chữ ký số (phải mua chứng chỉ trả phí), không phải vì app độc hại; toàn bộ mã nguồn nằm trong repo này. Chỉ hiện một lần.
+>
+> Trên một số máy Windows 11 mới cài, **Smart App Control** chặn hẳn app chưa có chữ ký số, không có nút *Run anyway*. Cách duy nhất là tắt Smart App Control (Windows Security → App & browser control → Smart App Control settings) — đây là lựa chọn của bạn: sau khi tắt thì không bật lại được nếu không cài lại Windows.
+
 ### Bước 3. Vào Steam
 - Bấm **Mở Steam**. Máy chưa cài Steam? Nút này sẽ mở trang tải Steam (giờ đã vào được vì Steam đã được mở khoá).
 - Nếu Steam đã mở sẵn từ trước mà vẫn báo lỗi mạng: chuột phải icon Steam ở khay → **Exit**, rồi mở lại Steam.
