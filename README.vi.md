@@ -26,7 +26,7 @@ Windows 10/11 (64-bit) · Giao diện tiếng Việt và tiếng Anh
 ### Bước 1. Tải và giải nén
 1. Vào [bản mới nhất](https://github.com/Edvat07/SteamUnblock/releases/latest), tải `SteamUnblock-v*-win64.zip`.
 2. Chuột phải file zip → **Extract All…** → chọn một thư mục cố định, ví dụ `C:\Apps\SteamUnblock`.
-3. Giữ nguyên thư mục `core` nằm cạnh `SteamUnblock.exe` (bên trong có `sing-box.exe` và `wintun.dll`).
+3. Giữ nguyên hai thư mục `_internal` và `core` nằm cạnh `SteamUnblock.exe`: `_internal` chứa Python riêng của app, `core` chứa `sing-box.exe` và `wintun.dll`. Muốn chuyển chỗ thì chuyển cả thư mục, đừng chỉ chép mỗi file exe.
 
 ### Bước 2. Chạy app
 1. Mở `SteamUnblock.exe`.
@@ -73,7 +73,7 @@ App tự theo ngôn ngữ hiển thị của Windows (Windows tiếng Việt →
 
 ## Câu hỏi thường gặp
 
-**App báo "Bạn đang mở app ngay bên trong file zip"?**
+**App báo "Failed to load Python DLL" hoặc "Bạn đang mở app ngay bên trong file zip"?**
 Bạn bấm đúp file exe ngay trong file zip mà chưa giải nén, nên thiếu thư mục `core`. Chuột phải file zip → **Extract All…**, rồi mở `SteamUnblock.exe` trong thư mục vừa giải nén. Nếu thiếu `core` vì lý do khác, app sẽ đề nghị mở trang tải.
 
 **Phần mềm diệt virus báo có virus?**
@@ -92,7 +92,7 @@ Bỏ tick *Khởi động cùng Windows*, thoát app (chuột phải icon ở kh
 Cần Python 3.12.
 
 1. Đặt `sing-box.exe` (sing-box 1.14.x, windows-amd64, tải ở [sing-box releases](https://github.com/SagerNet/sing-box/releases)) và `wintun.dll` (amd64, tải ở [wintun.net](https://www.wintun.net/)) vào thư mục `core\` cạnh mã nguồn.
-2. Chạy `build.bat`. Kết quả nằm ở `release\`.
+2. Chạy `build.bat`. Kết quả nằm ở `release\` (`SteamUnblock.exe` kèm thư mục `_internal`; cài đặt có sẵn ở đó được giữ nguyên).
 
 ## Thành phần bên thứ ba
 - [sing-box](https://github.com/SagerNet/sing-box) v1.14.3: GPL-3.0-or-later. Được chạy như một chương trình riêng, dự án này không liên kết với sing-box.

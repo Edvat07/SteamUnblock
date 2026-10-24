@@ -31,10 +31,10 @@ from PIL import Image
 import autostart
 import i18n
 import setup_check
-from tunnel import SingBox, build_steam_unblock_config, host_has_ipv6, probe_steam
+from tunnel import STEAM_TUN_INTERFACE_NAME, SingBox, build_steam_unblock_config, host_has_ipv6, probe_steam
 from winapi import (
     SHIELD_TUNNEL_MUTEX, STEAM_APP_MUTEX, STEAM_SHOW_EVENT, STEAM_TUNNEL_MUTEX, KillOnCloseJob, NamedEvent,
-    NamedMutex, enable_dpi_awareness, find_processes, flush_dns_cache, is_admin, mutex_exists, relaunch_as_admin,
+    NamedMutex, active_adapters, enable_dpi_awareness, flush_dns_cache, is_admin, mutex_exists, relaunch_as_admin,
     signal_event,
 )
 
@@ -48,7 +48,7 @@ RELEASES_URL = "https://github.com/Edvat07/SteamUnblock/releases/latest"
 STEAM_DOWNLOAD_URL = "https://store.steampowered.com/about/"
 STARTUP_TRAY, STARTUP_WINDOW = "tray", "window"
 
-SINGBOX_NAMES = frozenset({"sing-box.exe"})
+SHIELD_TUN_INTERFACE_NAME = "RobloxShield"
 UI_TICK_MS = 250
 WATCHDOG_EVERY_TICKS = 4            # 1 s
 CONNECT_TIMEOUT_S = 20
@@ -86,8 +86,8 @@ tr = i18n.Strings({
     "state_stopping": {"vi": "Đang tắt…", "en": "Turning off…"},
     "state_stopped": {"vi": "Đã tắt.", "en": "Turned off."},
     "state_not_on": {"vi": "Chưa bật", "en": "Not on"},
-    "state_paused": {"vi": "Tạm nghỉ: đang có tunnel khác (Roblox Shield)",
-                     "en": "Paused: another tunnel is running (Roblox Shield)"},
+    "state_paused": {"vi": "Tạm nghỉ: {name} đang chạy tunnel riêng",
+                     "en": "Paused: {name} is running its own tunnel"},
     "state_crashed": {"vi": "Bị tắt do lỗi — bấm Bật để thử lại.", "en": "Stopped by an error — press Turn on to retry."},
     "autostart_refresh_failed": {"vi": "Không cập nhật được tác vụ khởi động: {error}",
                                  "en": "Could not update the startup task: {error}"},
@@ -111,10 +111,12 @@ tr = i18n.Strings({
     "stopped_no_resume": {"vi": "Đã tắt. Sẽ không tự bật lại khi Roblox Shield tắt.",
                           "en": "Turned off. It will not turn back on when Roblox Shield stops."},
     "paused": {
-        "vi": "Roblox Shield (hoặc một sing-box khác) đang chạy và tự lo Steam, app này tạm nghỉ để tránh xung đột. "
-              "Khi nó tắt, app sẽ tự bật lại.",
-        "en": "Roblox Shield (or another sing-box) is running and handles Steam itself, so this app pauses to "
-              "avoid a conflict. It turns back on when that stops.",
+        "vi": "{name} đang bật một tunnel (card mạng TUN của sing-box). Hai tunnel chạy cùng lúc sẽ làm mất mạng, nên "
+              "app này tạm nghỉ và tự bật lại khi tunnel kia tắt. Nếu đó là một app VPN khác, hãy tắt chế độ TUN "
+              "của nó hoặc thoát app đó.",
+        "en": "{name} has a tunnel up (a sing-box TUN adapter). Two tunnels at once cut the network, so this app "
+              "pauses and turns back on when that tunnel goes down. If it is another VPN app, turn off its TUN mode "
+              "or quit it.",
     },
     "opening_steam": {
         "vi": "Đang mở Steam… Nếu Steam đã mở sẵn mà vẫn báo lỗi mạng, hãy thoát hẳn Steam rồi mở lại.",
@@ -125,8 +127,8 @@ tr = i18n.Strings({
         "vi": "Máy chưa cài Steam — đã mở trang tải Steam. Cài xong thì bấm Mở Steam.",
         "en": "Steam is not installed — opened the Steam download page. After installing it, press Open Steam.",
     },
-    "resuming": {"vi": "Roblox Shield đã tắt, bật lại mở khoá Steam.",
-                 "en": "Roblox Shield stopped, turning the Steam unblock back on."},
+    "resuming": {"vi": "Tunnel của {name} đã tắt, bật lại mở khoá Steam.",
+                 "en": "{name}'s tunnel is down, turning the Steam unblock back on."},
     "singbox_died": {"vi": "sing-box dừng đột ngột.", "en": "sing-box stopped unexpectedly."},
     "crash_notify": {"vi": "Mở khoá Steam bị tắt do lỗi. Mở cửa sổ để bật lại.",
                      "en": "The Steam unblock stopped because of an error. Open the window to turn it back on."},
@@ -146,7 +148,7 @@ class State(enum.Enum):
     STARTING = "starting"
     ON = "on"
     STOPPING = "stopping"
-    PAUSED = "paused"       # Roblox Shield's tunnel is up and unblocks Steam itself; resume when it goes down
+    PAUSED = "paused"       # another sing-box TUN is up (usually Roblox Shield's); resume when it goes down
 
 
 def find_steam_exe() -> Path | None:
@@ -191,6 +193,7 @@ class App:
         self.cancel_start = threading.Event()
         self.tunnel_flag = NamedMutex(STEAM_TUNNEL_MUTEX)
         self.yielding = False       # stopping because Roblox Shield wants the network, not because the user asked
+        self.paused_for = ""        # who the app paused for, named in the log when it resumes
         self.restart_requested = False
         self.tick_count = 0
         self.tray_hint_shown = False
@@ -371,9 +374,10 @@ class App:
         # Flag first, then look: Roblox Shield does the same in reverse, so at least one side always sees
         # the other and the two TUNs are never up together.
         self.tunnel_flag.acquire()
-        if self._other_tunnel_up():
+        other = self._other_tunnel()
+        if other:
             self.tunnel_flag.release()
-            self._pause()
+            self._pause(other)
             return
         self.state = State.STARTING
         self.cancel_start.clear()
@@ -421,23 +425,30 @@ class App:
             self._render_state(tr("state_stopped"), COLOR_IDLE)
             self.log(tr("stopped_no_resume"))
 
-    def _other_tunnel_up(self) -> bool:
+    def _other_tunnel(self) -> str | None:
         """
-        Roblox Shield's flag, or any sing-box that is not ours. The flag alone is not enough: a sing-box that
-        outlives its owner (crash before it was bound to a job) keeps its strict-route TUN up, and starting
-        ours next to it cuts the whole machine off the network.
+        Name of whoever has a tunnel that ours must not run next to, or None.
+
+        Roblox Shield raises its flag while connecting. Beyond that, what conflicts is a second sing-box TUN
+        adapter that is up (two strict-route TUNs cut the whole network), not a sing-box process as such: plenty
+        of VPN apps run sing-box as a plain proxy, and our own sing-box may still be exiting after a stop. An
+        orphaned Roblox Shield sing-box still shows up here through its "RobloxShield" adapter.
         """
         if mutex_exists(SHIELD_TUNNEL_MUTEX):
-            return True
-        return bool(set(find_processes(SINGBOX_NAMES)) - {self.singbox.pid})
+            return "Roblox Shield"
+        for name, description in active_adapters():
+            if "sing-tun" in description.lower() and name != STEAM_TUN_INTERFACE_NAME:
+                return "Roblox Shield" if name == SHIELD_TUN_INTERFACE_NAME else name
+        return None
 
-    def _pause(self) -> None:
+    def _pause(self, other: str) -> None:
         if self.state is State.PAUSED:
             return
         self.yielding = False
+        self.paused_for = other
         self.state = State.PAUSED
-        self._render_state(tr("state_paused"), COLOR_IDLE)
-        self.log(tr("paused"))
+        self._render_state(tr("state_paused", name=other), COLOR_IDLE)
+        self.log(tr("paused", name=other))
 
     def _yield_to_shield(self) -> None:
         """Roblox Shield is connecting: take our TUN down; it waits for our flag to disappear."""
@@ -488,12 +499,13 @@ class App:
         self.root.after(UI_TICK_MS, self._tick)
 
     def _watchdog(self) -> None:
-        other_up = self._other_tunnel_up()
-        if other_up and self.state in (State.STARTING, State.ON) and not self.yielding:
+        other = self._other_tunnel()
+        if other and self.state in (State.STARTING, State.ON) and not self.yielding:
+            self.paused_for = other
             self._yield_to_shield()
-        elif not other_up and self.state is State.PAUSED:
+        elif not other and self.state is State.PAUSED:
             self.state = State.IDLE
-            self.log(tr("resuming"))
+            self.log(tr("resuming", name=self.paused_for))
             self.start()
         elif self.state is State.ON and not self.singbox.is_alive():
             tail = self.singbox.log_tail()
@@ -505,7 +517,7 @@ class App:
         """sing-box is stopped and DNS flushed: drop our flag so Roblox Shield may start its TUN."""
         self.tunnel_flag.release()
         if self.yielding:
-            self._pause()
+            self._pause(self.paused_for or "Roblox Shield")
             return
         self.state = State.IDLE
         self._render_state(reason, color)
@@ -573,7 +585,9 @@ def main() -> None:
     root.mainloop()
     if app.restart_requested:
         instance.release()   # or the new copy would see us and just exit
-        subprocess.Popen(restart_command(), cwd=BASE_DIR, close_fds=True)
+        # A fresh copy must not inherit this one's PyInstaller state, or it could run from files we delete on exit.
+        env = dict(os.environ, PYINSTALLER_RESET_ENVIRONMENT="1")
+        subprocess.Popen(restart_command(), cwd=BASE_DIR, close_fds=True, env=env)
 
 
 if __name__ == "__main__":

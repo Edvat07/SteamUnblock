@@ -26,7 +26,7 @@ Windows 10/11 (64-bit) · UI in English and Vietnamese
 ### Step 1. Download and extract
 1. Open the [latest release](https://github.com/Edvat07/SteamUnblock/releases/latest) and download `SteamUnblock-v*-win64.zip`.
 2. Right-click the zip → **Extract All…** → choose a permanent folder, for example `C:\Apps\SteamUnblock`.
-3. Keep the `core` folder next to `SteamUnblock.exe` (it contains `sing-box.exe` and `wintun.dll`).
+3. Keep the `_internal` and `core` folders next to `SteamUnblock.exe`: `_internal` holds the app's own Python, `core` holds `sing-box.exe` and `wintun.dll`. Move or copy the whole folder, never the exe alone.
 
 ### Step 2. Run the app
 1. Open `SteamUnblock.exe`.
@@ -73,7 +73,7 @@ The app follows your Windows display language (Vietnamese Windows → Vietnamese
 
 ## FAQ
 
-**"You opened the app straight from inside the zip file".**
+**"Failed to load Python DLL" or "You opened the app straight from inside the zip file".**
 You double-clicked the exe inside the zip without extracting it, so the `core` folder is missing. Right-click the zip → **Extract All…**, then open `SteamUnblock.exe` from the extracted folder. If `core` is missing for another reason, the app offers to open the download page.
 
 **My antivirus flags the exe.**
@@ -92,7 +92,7 @@ Untick *Start with Windows*, quit the app (tray icon → Quit), then delete its 
 Requires Python 3.12.
 
 1. Put `sing-box.exe` (sing-box 1.14.x, windows-amd64, from [sing-box releases](https://github.com/SagerNet/sing-box/releases)) and `wintun.dll` (amd64, from [wintun.net](https://www.wintun.net/)) into a `core\` folder next to the source.
-2. Run `build.bat`. The result is in `release\`.
+2. Run `build.bat`. The result is in `release\` (`SteamUnblock.exe` plus its `_internal` folder; settings already there are kept).
 
 ## Third-party components
 - [sing-box](https://github.com/SagerNet/sing-box) v1.14.3: GPL-3.0-or-later. Run as a separate program; this project is not affiliated with sing-box.

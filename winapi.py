@@ -173,6 +173,57 @@ def flush_dns_cache() -> None:
         pass
 
 
+class _IP_ADAPTER_ADDRESSES(ctypes.Structure):
+    """Leading fields of IP_ADAPTER_ADDRESSES_LH, enough to walk the list and read names and state."""
+
+
+_IP_ADAPTER_ADDRESSES._fields_ = [
+    ("Length", wintypes.ULONG),
+    ("IfIndex", wintypes.DWORD),
+    ("Next", ctypes.POINTER(_IP_ADAPTER_ADDRESSES)),
+    ("AdapterName", ctypes.c_char_p),
+    ("FirstUnicastAddress", ctypes.c_void_p),
+    ("FirstAnycastAddress", ctypes.c_void_p),
+    ("FirstMulticastAddress", ctypes.c_void_p),
+    ("FirstDnsServerAddress", ctypes.c_void_p),
+    ("DnsSuffix", ctypes.c_wchar_p),
+    ("Description", ctypes.c_wchar_p),
+    ("FriendlyName", ctypes.c_wchar_p),
+    ("PhysicalAddress", ctypes.c_ubyte * 8),
+    ("PhysicalAddressLength", wintypes.ULONG),
+    ("Flags", wintypes.ULONG),
+    ("Mtu", wintypes.ULONG),
+    ("IfType", wintypes.DWORD),
+    ("OperStatus", ctypes.c_int),
+]
+_iphlpapi = ctypes.WinDLL("iphlpapi")
+_iphlpapi.GetAdaptersAddresses.argtypes = (wintypes.ULONG, wintypes.ULONG, wintypes.LPVOID, wintypes.LPVOID,
+                                           ctypes.POINTER(wintypes.ULONG))
+_iphlpapi.GetAdaptersAddresses.restype = wintypes.ULONG
+_GAA_SKIP_ADDRESSES = 0x1 | 0x2 | 0x4 | 0x8     # unicast, anycast, multicast, DNS servers: not needed
+_ERROR_BUFFER_OVERFLOW = 111
+_IF_OPER_STATUS_UP = 1
+
+
+def active_adapters() -> list[tuple[str, str]]:
+    """(name, description) of every network adapter that is up. Empty if Windows cannot list them."""
+    size = wintypes.ULONG(16 * 1024)
+    for _ in range(3):
+        buf = ctypes.create_string_buffer(size.value)
+        rc = _iphlpapi.GetAdaptersAddresses(0, _GAA_SKIP_ADDRESSES, None, buf, ctypes.byref(size))
+        if rc != _ERROR_BUFFER_OVERFLOW:
+            break
+    if rc != 0:
+        return []
+    adapters, node = [], ctypes.cast(buf, ctypes.POINTER(_IP_ADAPTER_ADDRESSES))
+    while node:
+        a = node.contents
+        if a.OperStatus == _IF_OPER_STATUS_UP:
+            adapters.append((a.FriendlyName or "", a.Description or ""))
+        node = a.Next
+    return adapters
+
+
 def enable_dpi_awareness() -> None:
     try:
         ctypes.WinDLL("shcore").SetProcessDpiAwareness(1)

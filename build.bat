@@ -30,20 +30,25 @@ rem --- Dependencies ----------------------------------------------------------
 %PY% -m pip install --disable-pip-version-check -q pyinstaller pystray pillow || goto :fail
 
 rem --- Build -----------------------------------------------------------------
+rem One folder, not --onefile: a onefile exe unpacks Python into %%TEMP%%\_MEI..., and temp cleaners or a
+rem restart could delete it while the app runs ("No such file ... base_library.zip").
 echo [*] Building SteamUnblock.exe...
-%PY% -m PyInstaller --noconfirm --clean --onefile --windowed --uac-admin --noupx ^
+%PY% -m PyInstaller --noconfirm --clean --onedir --windowed --uac-admin --noupx ^
     --name SteamUnblock --icon "%~dp0app_icon.ico" ^
-    --distpath "%OUT%" --workpath "%~dp0build" --specpath "%~dp0build" ^
+    --distpath "%~dp0dist" --workpath "%~dp0build" --specpath "%~dp0build" ^
     steam_app.py || goto :fail
 
+rem PyInstaller wipes its output folder, so build into dist\ and copy over: settings in release\ survive.
+robocopy "%~dp0dist\SteamUnblock" "%OUT%" /E /NFL /NDL /NJH /NJS >nul
+if errorlevel 8 goto :fail
 if not exist "%OUT%\core" mkdir "%OUT%\core"
 copy /y "core\sing-box.exe" "%OUT%\core\" >nul || goto :fail
 copy /y "core\wintun.dll" "%OUT%\core\" >nul || goto :fail
 copy /y "app_icon.ico" "%OUT%\" >nul
 
-rmdir /s /q "%~dp0build" 2>nul
+rmdir /s /q "%~dp0build" "%~dp0dist" 2>nul
 echo.
-echo [OK] Done: %OUT%\SteamUnblock.exe
+echo [OK] Done: %OUT%\SteamUnblock.exe (keep the _internal and core folders next to it)
 pause
 exit /b 0
 
